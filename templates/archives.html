@@ -6,7 +6,15 @@
 >
   <th:block th:fragment="content">
     <body>
-      <div id="Joe">
+      <!-- 获取用户认证信息 -->
+      <div
+        id="Joe"
+        th:with="
+          auth=${#authentication},
+          isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+          userRoles=${isLoggedIn ? auth.authorities : {}},
+          roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}}"
+      >
         <th:block th:replace="~{modules/macro/navbar :: navbar}" />
         <!--          首页大图-->
         <th:block th:if="${theme.config.beauty.enable_big_banner}">
@@ -25,21 +33,30 @@
                     <div class="joe_archives-title">
                       <i class="joe-font joe-icon-fenlei"></i>分类
                     </div>
-                    <ul
-                      class="joe_category-list"
-                      th:with="categories = ${categoryFinder.listAll()}"
-                    >
-                      <li class="item" th:each="category : ${categories}">
-                        <a
-                          class="link"
-                          th:href="@{${category.status.permalink}}"
-                          th:title="${category.spec.displayName}"
+                    <ul class="joe_category-list" th:with="allCategories = ${categoryFinder.listAll()}">
+                      <li class="item" th:each="category : ${allCategories}">
+                        <!-- 权限检查：只显示用户有权限访问的分类 -->
+                        <th:block
+                          th:with="
+                            requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
+                            isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                            isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                            hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                            hasPermission = ${isPublic or isAdmin or hasRole}"
                         >
-                          <span th:title="${category.spec.displayName}">
-                            [[${category.spec.displayName}]]
-                          </span>
-                          <em th:text="${category.status.visiblePostCount ?: 0}"></em>
-                        </a>
+                          <th:block th:if="${hasPermission}">
+                            <a
+                              class="link"
+                              th:href="@{${category.status.permalink}}"
+                              th:title="${category.spec.displayName}"
+                            >
+                              <span th:title="${category.spec.displayName}">
+                                [[${category.spec.displayName}]]
+                              </span>
+                              <em th:text="${category.status.visiblePostCount ?: 0}"></em>
+                            </a>
+                          </th:block>
+                        </th:block>
                       </li>
                     </ul>
                   </div>
@@ -61,14 +78,26 @@
                       <th:block th:each="archive : ${archives.items}">
                         <th:block th:each="month : ${archive.months}">
                           <li class="item" th:each="post : ${month.posts}">
-                            <a
-                              rel="noopener noreferrer"
-                              target="_blank"
-                              th:title="${post.spec.title}"
-                              th:href="@{${post.status.permalink}}"
-                              >[[${post.spec.title}]]</a
+                            <!-- 权限检查：只显示用户有权限访问的文章 -->
+                            <th:block
+                              th:with="
+                                requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
+                                isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                                isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                                hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                                hasPermission = ${isPublic or isAdmin or hasRole}"
                             >
-                            <span> [[${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}]] </span>
+                              <th:block th:if="${hasPermission}">
+                                <a
+                                  rel="noopener noreferrer"
+                                  target="_blank"
+                                  th:title="${post.spec.title}"
+                                  th:href="@{${post.status.permalink}}"
+                                  >[[${post.spec.title}]]</a
+                                >
+                                <span> [[${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}]] </span>
+                              </th:block>
+                            </th:block>
                           </li>
                         </th:block>
                       </th:block>
@@ -76,10 +105,7 @@
                     <th:block th:replace="~{modules/common/pagination :: archives}" />
                   </th:block>
                   <th:block th:if="${theme.config.archives.archives_list_type =='timeline'}">
-                    <ul
-                      class="joe_archives-timelist"
-                      th:with="allArchives = ${postFinder.archives(1,9999)}"
-                    >
+                    <ul class="joe_archives-timelist" th:with="allArchives = ${postFinder.archives(1,9999)}">
                       <th:block th:each="archive : ${allArchives.items}">
                         <th:block
                           th:if="${theme.config.archives.archives_timeline_metric == 'month'}"
@@ -98,14 +124,26 @@
                               </div>
                               <ol class="panel-body">
                                 <li th:each="post : ${month.posts}">
-                                  <a
-                                    rel="noopener noreferrer"
-                                    target="_blank"
-                                    th:title="${post.spec.title}"
-                                    th:href="@{${post.status.permalink}}"
+                                  <!-- 权限检查：只显示用户有权限访问的文章 -->
+                                  <th:block
+                                    th:with="
+                                      requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
+                                      isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                                      isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                                      hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                                      hasPermission = ${isPublic or isAdmin or hasRole}"
                                   >
-                                    [[${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}]]：[[${post.spec.title}]]
-                                  </a>
+                                    <th:block th:if="${hasPermission}">
+                                      <a
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                        th:title="${post.spec.title}"
+                                        th:href="@{${post.status.permalink}}"
+                                      >
+                                        [[${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}]]：[[${post.spec.title}]]
+                                      </a>
+                                    </th:block>
+                                  </th:block>
                                 </li>
                               </ol>
                             </div>
@@ -127,13 +165,25 @@
                                   th:each="month : ${archive.months}"
                                 >
                                   <li th:each="post : ${month.posts}">
-                                    <a
-                                      rel="noopener noreferrer"
-                                      target="_blank"
-                                      th:title="${post.spec.title}"
-                                      th:href="@{${post.status.permalink}}"
-                                      >[[${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}]]：[[${post.spec.title}]]</a
+                                    <!-- 权限检查：只显示用户有权限访问的文章 -->
+                                    <th:block
+                                      th:with="
+                                        requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
+                                        isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                                        isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                                        hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                                        hasPermission = ${isPublic or isAdmin or hasRole}"
                                     >
+                                      <th:block th:if="${hasPermission}">
+                                        <a
+                                          rel="noopener noreferrer"
+                                          target="_blank"
+                                          th:title="${post.spec.title}"
+                                          th:href="@{${post.status.permalink}}"
+                                          >[[${#dates.format(post.spec.publishTime,'yyyy-MM-dd')}]]：[[${post.spec.title}]]</a
+                                        >
+                                      </th:block>
+                                    </th:block>
                                   </li>
                                 </th:block>
                               </ol>

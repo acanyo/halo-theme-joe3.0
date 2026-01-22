@@ -6,7 +6,16 @@
 >
   <th:block th:fragment="content">
     <body>
-      <div id="Joe" th:with="categories = ${categoryFinder.listAll()}">
+      <!-- 获取用户认证信息 -->
+      <div
+        id="Joe"
+        th:with="
+          auth=${#authentication},
+          isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+          userRoles=${isLoggedIn ? auth.authorities : {}},
+          roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+          allCategories = ${categoryFinder.listAll()}"
+      >
         <th:block th:replace="~{modules/macro/navbar :: navbar}" />
         <!--          首页大图-->
         <th:block th:if="${theme.config.beauty.enable_big_banner}">
@@ -21,9 +30,8 @@
               <div class="joe_index__title">
                 <ul class="joe_index__title-title pl-15">
                   <li class="item active">
-                    [[${theme.config.categories.categories_title ?: '全部分类'}]]<span
-                      class="totals"
-                      >[[${#lists.size(categories)}]]</span
+                    [[${theme.config.categories.categories_title ?: '全部分类'}]]<span class="totals"
+                      >[[${#lists.size(allCategories)}]]</span
                     >
                   </li>
                 </ul>
@@ -33,49 +41,73 @@
                   th:class="'joe_index__hot-list'+${theme.config.categories.categories_type  == 'card'?' ':'-tag'}+ ' animated fadeIn'"
                 >
                   <th:block th:if="${theme.config.categories.categories_type=='card'}">
-                    <li class="item" th:each="category : ${categories}">
-                      <a
-                        class="link"
-                        th:href="${category.status.permalink}"
-                        th:title="${category.spec.displayName}"
+                    <li class="item" th:each="category : ${allCategories}">
+                      <!-- 权限检查：只显示用户有权限访问的分类 -->
+                      <th:block
+                        th:with="
+                          requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
+                          isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                          isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                          hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                          hasPermission = ${isPublic or isAdmin or hasRole}"
                       >
-                        <figure class="inner">
-                          <th:block th:if="${theme.config.categories.enable_categories_post_num}">
-                            <th:block th:replace="~{modules/macro/post_num :: post_num}" />
-                          </th:block>
+                        <th:block th:if="${hasPermission}">
+                          <a
+                            class="link"
+                            th:href="${category.status.permalink}"
+                            th:title="${category.spec.displayName}"
+                          >
+                            <figure class="inner">
+                              <th:block th:if="${theme.config.categories.enable_categories_post_num}">
+                                <th:block th:replace="~{modules/macro/post_num :: post_num}" />
+                              </th:block>
 
-                          <img
-                            width="100%"
-                            height="120"
-                            class="image lazyload"
-                            th:with="cover = ${category.spec.cover ?: theme.config.basic.random_img_api_url+'?pageid='+category.metadata.name}"
-                            th:data-src="${cover}"
-                            th:srcset="|${thumbnail.gen(cover, 's')} 400w,
+                              <img
+                                width="100%"
+                                height="120"
+                                class="image lazyload"
+                                th:with="cover = ${category.spec.cover ?: theme.config.basic.random_img_api_url+'?pageid='+category.metadata.name}"
+                                th:data-src="${cover}"
+                                th:srcset="|${thumbnail.gen(cover, 's')} 400w,
               ${thumbnail.gen(cover, 'm')} 800w,
               ${thumbnail.gen(cover, 'l')} 1200w,
               ${thumbnail.gen(cover, 'xl')} 1600w|"
-                            sizes="(max-width: 1600px) 100vw, 1600px"
-                            th:src="${theme.config.home.lazyload_thumbnail}"
-                            th:alt="${category.spec.displayName}"
-                            onerror="Joe.errorImg(this, 'HomeErrImg')"
-                          />
-                          <figcaption class="title">[[${category.spec.displayName}]]</figcaption>
-                        </figure>
-                      </a>
+                                sizes="(max-width: 1600px) 100vw, 1600px"
+                                th:src="${theme.config.home.lazyload_thumbnail}"
+                                th:alt="${category.spec.displayName}"
+                                onerror="Joe.errorImg(this, 'HomeErrImg')"
+                              />
+                              <figcaption class="title">[[${category.spec.displayName}]]</figcaption>
+                            </figure>
+                          </a>
+                        </th:block>
+                      </th:block>
                     </li>
                   </th:block>
                   <th:block th:if="${theme.config.categories.categories_type=='tag'}">
-                    <li class="item" th:each="category : ${categories}">
-                      <a
-                        class="link"
-                        th:href="${category.status.permalink}"
-                        th:title="${category.spec.displayName}"
+                    <li class="item" th:each="category : ${allCategories}">
+                      <!-- 权限检查：只显示用户有权限访问的分类 -->
+                      <th:block
+                        th:with="
+                          requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
+                          isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                          isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                          hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                          hasPermission = ${isPublic or isAdmin or hasRole}"
                       >
-                        <span title="${category.name!}">[[${category.spec.displayName}]]</span>
-                        <th:block th:if="${theme.config.categories.enable_categories_post_num}">
-                          <th:block th:replace="~{modules/macro/post_num :: post_num}" />
+                        <th:block th:if="${hasPermission}">
+                          <a
+                            class="link"
+                            th:href="${category.status.permalink}"
+                            th:title="${category.spec.displayName}"
+                          >
+                            <span title="${category.name!}">[[${category.spec.displayName}]]</span>
+                            <th:block th:if="${theme.config.categories.enable_categories_post_num}">
+                              <th:block th:replace="~{modules/macro/post_num :: post_num}" />
+                            </th:block>
+                          </a>
                         </th:block>
-                      </a>
+                      </th:block>
                     </li>
                   </th:block>
                 </ul>

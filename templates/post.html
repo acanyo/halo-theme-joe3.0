@@ -6,9 +6,57 @@
 >
   <th:block
     th:fragment="content"
-    th:with="days=${(new java.util.Date().getTime()-post.status.lastModifyTime.toEpochMilli())/86400000}"
+    th:with="
+      days=${(new java.util.Date().getTime()-post.status.lastModifyTime.toEpochMilli())/86400000},
+      auth=${#authentication},
+      isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+      userRoles=${isLoggedIn ? auth.authorities : {}},
+      roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+      requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
+      isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+      isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+      hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+      hasPermission = ${isPublic or isAdmin or hasRole}"
   >
     <body>
+      <!-- 权限检查：如果没有权限，显示提示页面 -->
+      <th:block th:if="${!hasPermission}">
+        <div id="Joe">
+          <th:block th:replace="~{modules/macro/navbar :: navbar}" />
+          <div class="joe_container joe_main_container" style="padding: 60px 20px;">
+            <div class="joe_main">
+              <div style="background: #fff; padding: 60px 40px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="font-size: 80px; margin-bottom: 20px;">🔒</div>
+                <h1 style="font-size: 32px; color: #333; margin-bottom: 20px;">此内容需要特定权限</h1>
+                <th:block th:if="${!isLoggedIn}">
+                  <p style="font-size: 16px; color: #666; margin-bottom: 30px;">
+                    此文章仅对特定用户开放，请先登录查看
+                  </p>
+                  <a th:href="@{/console}" style="display: inline-block; padding: 12px 30px; background: var(--theme); color: #fff; border-radius: 4px; text-decoration: none; font-size: 16px;">
+                    前往登录
+                  </a>
+                </th:block>
+                <th:block th:if="${isLoggedIn}">
+                  <p style="font-size: 16px; color: #666; margin-bottom: 20px;">
+                    您当前的角色无权访问此内容
+                  </p>
+                  <p style="font-size: 14px; color: #999; margin-bottom: 30px;">
+                    需要角色：<code th:text="${requiredRole}" style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px;"></code>
+                  </p>
+                  <a th:href="@{/}" style="display: inline-block; padding: 12px 30px; background: var(--theme); color: #fff; border-radius: 4px; text-decoration: none; font-size: 16px;">
+                    返回首页
+                  </a>
+                </th:block>
+              </div>
+            </div>
+          </div>
+          <th:block th:replace="~{modules/common/footer :: footer}" />
+        </div>
+        <th:block th:replace="~{modules/macro/tail :: tail}" />
+      </th:block>
+      
+      <!-- 有权限：显示文章内容 -->
+      <th:block th:if="${hasPermission}">
       <div id="Joe">
         <!--          navbar-->
         <th:block th:replace="~{modules/macro/navbar :: navbar}" />
@@ -362,5 +410,7 @@
       </script>
       <th:block th:replace="~{modules/macro/tail :: tail}" />
     </body>
+    </th:block>
+    <!-- 结束有权限的内容显示 -->
   </th:block>
 </html>

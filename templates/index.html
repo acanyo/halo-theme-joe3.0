@@ -6,7 +6,16 @@
 >
   <th:block th:fragment="content">
     <body>
-      <div id="Joe">
+      <!-- 获取用户认证信息 - 使用 Halo 内置 #authentication -->
+      <div
+        id="Joe"
+        th:with="
+          auth=${#authentication},
+          isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+          username=${isLoggedIn ? auth.name : ''},
+          userRoles=${isLoggedIn ? auth.authorities : {}},
+          roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}}"
+      >
         <!--          navbar-->
         <th:block th:replace="~{modules/macro/navbar :: navbar}" />
         <!--          首页大图-->
@@ -73,7 +82,19 @@
                 <div class="joe_index__list">
                   <ul class="joe_list">
                     <th:block th:each="post, iteration : ${posts.items}">
-                      <th:block th:replace="~{modules/macro/post_item :: post_item}" />
+                      <!-- 权限检查：只显示用户有权限访问的文章 -->
+                      <th:block
+                        th:with="
+                          requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
+                          isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                          isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                          hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                          hasPermission = ${isPublic or isAdmin or hasRole}"
+                      >
+                        <th:block th:if="${hasPermission}">
+                          <th:block th:replace="~{modules/macro/post_item :: post_item}" />
+                        </th:block>
+                      </th:block>
                     </th:block>
                   </ul>
                 </div>

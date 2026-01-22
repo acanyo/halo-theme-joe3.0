@@ -288,7 +288,12 @@
   </th:block>
   <th:block
     th:fragment="enable_category_cloud(category_cloud_data)"
-    th:with="category_cloud_num = ${category_cloud_data.category_cloud_num}"
+    th:with="
+      category_cloud_num = ${category_cloud_data.category_cloud_num},
+      auth=${#authentication},
+      isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+      userRoles=${isLoggedIn ? auth.authorities : {}},
+      roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}}"
   >
     <section class="joe_aside__item tags-cloud" id="categories-cloud">
       <div class="joe_aside__item-title">
@@ -305,26 +310,52 @@
         >
           <th:block th:if="${category_cloud_data.category_cloud_num_type} == num">
             <th:block th:with="categories = ${categoryFinder.list(1,category_cloud_num)}">
-              <a
-                th:data-label="${category.spec.displayName}"
-                th:data-url="@{${category.status.permalink}}"
-                th:each="category : ${categories}"
-                th:href="@{${category.status.permalink}}"
-                th:title="${category.spec.displayName}"
-                >[[${category.spec.displayName}]]</a
-              >
+              <th:block th:each="category : ${categories}">
+                <!-- 权限检查：只显示用户有权限访问的分类 -->
+                <th:block
+                  th:with="
+                    requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
+                    isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                    isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                    hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                    hasPermission = ${isPublic or isAdmin or hasRole}"
+                >
+                  <th:block th:if="${hasPermission}">
+                    <a
+                      th:data-label="${category.spec.displayName}"
+                      th:data-url="@{${category.status.permalink}}"
+                      th:href="@{${category.status.permalink}}"
+                      th:title="${category.spec.displayName}"
+                      >[[${category.spec.displayName}]]</a
+                    >
+                  </th:block>
+                </th:block>
+              </th:block>
             </th:block>
           </th:block>
           <th:block th:if="${category_cloud_data.category_cloud_num_type} == all">
             <th:block th:with="categories = ${categoryFinder.listAll()}">
-              <a
-                th:data-label="${category.spec.displayName}"
-                th:data-url="@{${category.status.permalink}}"
-                th:each="category : ${categories}"
-                th:href="@{${category.status.permalink}}"
-                th:title="${category.spec.displayName}"
-                >[[${category.spec.displayName}]]</a
-              >
+              <th:block th:each="category : ${categories}">
+                <!-- 权限检查：只显示用户有权限访问的分类 -->
+                <th:block
+                  th:with="
+                    requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
+                    isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                    isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+                    hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                    hasPermission = ${isPublic or isAdmin or hasRole}"
+                >
+                  <th:block th:if="${hasPermission}">
+                    <a
+                      th:data-label="${category.spec.displayName}"
+                      th:data-url="@{${category.status.permalink}}"
+                      th:href="@{${category.status.permalink}}"
+                      th:title="${category.spec.displayName}"
+                      >[[${category.spec.displayName}]]</a
+                    >
+                  </th:block>
+                </th:block>
+              </th:block>
             </th:block>
           </th:block>
         </div>
