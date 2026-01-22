@@ -1,6 +1,14 @@
 <!doctype html>
 <html th:lang="${#locale.toLanguageTag}" xmlns:th="https://www.thymeleaf.org">
-  <th:block th:fragment="navbar">
+  <th:block
+    th:fragment="navbar"
+    th:with="
+      auth=${#authentication},
+      isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+      userRoles=${isLoggedIn ? auth.authorities : {}},
+      roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+      publicUnauthMenu=${theme.config.permission.publicUnauthMenu != null ? theme.config.permission.publicUnauthMenu : true}"
+  >
     <header class="joe_header">
       <div
         class="joe_header__above"
@@ -39,13 +47,13 @@
                   th:with="menuItems = ${menu.menuItems}"
                 >
                   <th:block th:each="menuItem : ${menuItems}">
-                    <th:block th:replace="~{modules/macro/menu-item :: menu-item(${menuItem})}" />
+                    <th:block th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${menuItem}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}" />
                   </th:block>
                 </th:block>
                 <th:block th:if="${not #lists.isEmpty(menuItem.children)}">
                   <div class="joe_dropdown" trigger="hover" placement="60px">
                     <div class="joe_dropdown__link">
-                      <th:block th:replace="~{modules/macro/menu-item :: menu-item(${menuItem})}" />
+                      <th:block th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${menuItem}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}" />
                       <i
                         class="joe-font joe-icon-arrow-down joe_dropdown__link-icon"
                         style="color: var(--main)"
@@ -57,13 +65,13 @@
                           th:class="${not #lists.isEmpty(childMenu.children)} ? 'joe_nav_sub-li' : ''"
                         >
                           <th:block
-                            th:replace="~{modules/macro/menu-item :: menu-item(${childMenu})}"
+                            th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${childMenu}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}"
                           />
                           <th:block th:if="${not #lists.isEmpty(childMenu.children)}">
                             <ol class="joe_nav_sub">
                               <li th:each="subChildMenu : ${childMenu.children}">
                                 <th:block
-                                  th:replace="~{modules/macro/menu-item :: menu-item(${subChildMenu})}"
+                                  th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${subChildMenu}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}"
                                 />
                               </li>
                             </ol>
@@ -81,13 +89,13 @@
                 <th:block th:with="menuItems = ${menu.menuItems}">
                   <th:block th:each="menuItem : ${menuItems}">
                     <th:block th:if="${#lists.isEmpty(menuItem.children)}">
-                      <th:block th:replace="~{modules/macro/menu-item :: menu-item(${menuItem})}" />
+                      <th:block th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${menuItem}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}" />
                     </th:block>
                     <th:block th:if="${not #lists.isEmpty(menuItem.children)}">
                       <div class="joe_dropdown" trigger="hover" placement="60px">
                         <div class="joe_dropdown__link">
                           <th:block
-                            th:replace="~{modules/macro/menu-item :: menu-item(${menuItem})}"
+                            th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${menuItem}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}"
                           />
                           <i
                             class="joe-font joe-icon-arrow-down joe_dropdown__link-icon"
@@ -100,13 +108,13 @@
                             th:class="${not #lists.isEmpty(childMenu.children)} ? 'joe_nav_sub-li' : ''"
                           >
                             <th:block
-                              th:replace="~{modules/macro/menu-item :: menu-item(${childMenu})}"
+                              th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${childMenu}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}"
                             />
                             <th:block th:if="${not #lists.isEmpty(childMenu.children)}">
                               <ol class="joe_nav_sub">
                                 <li th:each="subChildMenu : ${childMenu.children}">
                                   <th:block
-                                    th:replace="~{modules/macro/menu-item :: menu-item(${subChildMenu})}"
+                                    th:replace="~{modules/macro/menu-item :: menu-item-with-permission(${subChildMenu}, ${isLoggedIn}, ${roleList}, ${publicUnauthMenu})}"
                                   />
                                 </li>
                               </ol>

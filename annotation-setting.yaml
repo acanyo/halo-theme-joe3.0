@@ -261,3 +261,115 @@ spec:
       value: 'true'
       onValue: 'true'
       offValue: 'false'
+---
+apiVersion: v1alpha1
+kind: AnnotationSetting
+metadata:
+  name: joe3-post-role-annotation
+spec:
+  targetRef:
+    group: content.halo.run
+    kind: Post
+  formSchema:
+    - $formkit: select
+      name: role
+      key: role
+      label: 访问权限
+      help: 选择允许访问此文章的角色（不选择则为公开）
+      searchable: true
+      clearable: true
+      value: ""
+      action: /api/v1alpha1/roles?labelSelector=!halo.run/role-template
+      requestOption:
+        method: GET
+        pageField: page
+        sizeField: size
+        totalField: total
+        itemsField: items
+        labelField: metadata.annotations['rbac.authorization.halo.run/display-name']
+        valueField: metadata.name
+        fieldSelectorKey: metadata.name
+---
+apiVersion: v1alpha1
+kind: AnnotationSetting
+metadata:
+  name: joe3-category-role-annotation
+spec:
+  targetRef:
+    group: content.halo.run
+    kind: Category
+  formSchema:
+    - $formkit: select
+      name: role
+      key: role
+      label: 访问权限
+      help: 选择允许访问此分类的角色（不选择则为公开）
+      searchable: true
+      clearable: true
+      value: ""
+      action: /api/v1alpha1/roles?labelSelector=!halo.run/role-template
+      requestOption:
+        method: GET
+        pageField: page
+        sizeField: size
+        totalField: total
+        itemsField: items
+        labelField: metadata.annotations['rbac.authorization.halo.run/display-name']
+        valueField: metadata.name
+        fieldSelectorKey: metadata.name
+---
+apiVersion: v1alpha1
+kind: AnnotationSetting
+metadata:
+  name: joe3-menuitem-role-annotation
+spec:
+  targetRef:
+    group: ""
+    kind: MenuItem
+  formSchema:
+    - $formkit: select
+      name: role
+      key: role
+      label: 访问权限
+      help: 选择允许访问此菜单项的角色（不选择则为公开）
+      searchable: true
+      value: ""
+      clearable: true
+      action: /api/v1alpha1/roles?labelSelector=!halo.run/role-template
+      requestOption:
+        method: GET
+        pageField: page
+        sizeField: size
+        totalField: total
+        itemsField: items
+        labelField: metadata.annotations['rbac.authorization.halo.run/display-name']
+        valueField: metadata.name
+        fieldSelectorKey: metadata.name
+---
+apiVersion: v1alpha1
+kind: AnnotationSetting
+metadata:
+  name: joe3-singlepage-role-annotation
+spec:
+  targetRef:
+    group: content.halo.run
+    kind: SinglePage
+  formSchema:
+    - $formkit: select
+      name: role
+      key: role
+      label: 访问权限
+      help: 选择允许访问此独立页面的角色（不选择则为公开）
+      searchable: true
+      value: ""
+      clearable: true
+      action: /api/v1alpha1/roles?labelSelector=!halo.run/role-template
+      requestOption:
+        method: GET
+        pageField: page
+        sizeField: size
+        totalField: total
+        itemsField: items
+        labelField: metadata.annotations['rbac.authorization.halo.run/display-name']
+        valueField: metadata.name
+        fieldSelectorKey: metadata.name

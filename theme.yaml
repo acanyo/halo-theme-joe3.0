@@ -7,7 +7,7 @@ metadata:
     # https://www.halo.run/store/apps/app-ZxiPb
     'store.halo.run/app-id': 'app-ZxiPb'
 spec:
-  displayName: Theme Joe3
+  displayName: Theme Joe3(定制版)
   author:
     name: Jiewenhuang
     website: 'https://www.jiewen.run'
@@ -17,7 +17,7 @@ spec:
   repo: 'https://github.com/jiewenhuang/halo-theme-joe3.0'
   settingName: 'theme-Joe-setting'
   configMapName: 'theme-Joe-configMap'
-  version: '1.5.0'
+  version: '2.1.4'
   requires: '>=2.22.2'
   customTemplates:
     page:

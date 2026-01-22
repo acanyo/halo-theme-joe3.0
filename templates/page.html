@@ -4,8 +4,77 @@
   xmlns:th="http://www.thymeleaf.org"
   th:replace="~{modules/layout :: html(title = ${site.title},htmlType = sheet,header = null,leftSidebar = true,content = ~{::content}, head = null, footer = null)}"
 >
-  <th:block th:fragment="content">
+  <th:block
+    th:fragment="content"
+    th:with="
+      auth=${#authentication},
+      isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
+      userRoles=${isLoggedIn ? auth.authorities : {}},
+      roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+      publicUnauthPage=${theme.config.permission.publicUnauthPage != null ? theme.config.permission.publicUnauthPage : true},
+      requiredRole = ${singlePage.metadata.annotations != null ? singlePage.metadata.annotations['role'] : null},
+      hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+      requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+      isPublic = ${!hasRequiredRole and (publicUnauthPage or isLoggedIn)},
+      isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+      hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
+      hasPermission = ${isPublic or isAdmin or hasRole}"
+  >
     <body>
+      <!-- 权限检查：如果没有权限，显示提示页面 -->
+      <th:block th:if="${!hasPermission}">
+        <div id="Joe">
+          <th:block th:replace="~{modules/macro/navbar :: navbar}" />
+          <div class="joe_container joe_main_container" style="padding: 60px 20px;">
+            <div class="joe_main">
+              <div style="background: #fff; padding: 60px 40px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="font-size: 80px; margin-bottom: 20px;">🔒</div>
+                <h1 style="font-size: 32px; color: #333; margin-bottom: 20px;">此页面需要特定权限</h1>
+                <th:block th:if="${!isLoggedIn}">
+                  <p style="font-size: 16px; color: #666; margin-bottom: 30px;">
+                    此页面仅对特定用户开放，请先登录查看
+                  </p>
+                  <a th:href="@{/console}" style="display: inline-block; padding: 12px 30px; background: var(--theme); color: #fff; border-radius: 4px; text-decoration: none; font-size: 16px;">
+                    前往登录
+                  </a>
+                </th:block>
+                <th:block th:if="${isLoggedIn}">
+                  <p style="font-size: 16px; color: #666; margin-bottom: 20px;">
+                    您当前的角色无权访问此页面
+                  </p>
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 20px; text-align: left;">
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                      <strong>需要的角色：</strong>
+                      <code th:text="${requiredRole}" style="background: #fff; padding: 4px 8px; border-radius: 3px; border: 1px solid #ddd;"></code>
+                      或
+                      <code th:text="${'ROLE_' + requiredRole}" style="background: #fff; padding: 4px 8px; border-radius: 3px; border: 1px solid #ddd;"></code>
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 0;">
+                      <strong>您当前的角色：</strong>
+                      <th:block th:if="${#lists.isEmpty(roleList)}">
+                        <span style="color: #999;">（无角色）</span>
+                      </th:block>
+                      <th:block th:if="${!#lists.isEmpty(roleList)}">
+                        <th:block th:each="role, iterStat : ${roleList}">
+                          <code th:text="${role}" style="background: #fff; padding: 4px 8px; border-radius: 3px; border: 1px solid #ddd; margin-right: 5px;"></code>
+                        </th:block>
+                      </th:block>
+                    </p>
+                  </div>
+                  <a th:href="@{/}" style="display: inline-block; padding: 12px 30px; background: var(--theme); color: #fff; border-radius: 4px; text-decoration: none; font-size: 16px;">
+                    返回首页
+                  </a>
+                </th:block>
+              </div>
+            </div>
+          </div>
+          <th:block th:replace="~{modules/common/footer :: footer}" />
+        </div>
+        <th:block th:replace="~{modules/macro/tail :: tail}" />
+      </th:block>
+      
+      <!-- 有权限：显示页面内容 -->
+      <th:block th:if="${hasPermission}">
       <div id="Joe">
         <th:block th:replace="~{modules/macro/navbar :: navbar}" />
         <div
@@ -203,6 +272,8 @@
         });
       </script>
       <th:block th:replace="~{modules/macro/tail :: tail}" />
+      </th:block>
+      <!-- 结束有权限的内容显示 -->
     </body>
   </th:block>
 </html>

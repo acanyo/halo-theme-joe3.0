@@ -1,5 +1,6 @@
 <!doctype html>
 <html th:lang="${#locale.toLanguageTag}" xmlns:th="https://www.thymeleaf.org">
+  <!-- 原始菜单项宏（不带权限检查） -->
   <th:block th:fragment="menu-item(menuItem)">
     <a
       class="item"
@@ -14,5 +15,35 @@
       </th:block>
       [[${menuItem.status.displayName}]]
     </a>
+  </th:block>
+  
+  <!-- 带权限检查的菜单项宏 -->
+  <th:block th:fragment="menu-item-with-permission(menuItem, isLoggedIn, roleList, publicUnauthMenu)">
+    <th:block
+      th:with="
+        requiredRole = ${menuItem.metadata.annotations != null ? menuItem.metadata.annotations['role'] : null},
+        hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+        requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+        isPublic = ${!hasRequiredRole and (publicUnauthMenu or isLoggedIn)},
+        isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
+        hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
+        hasPermission = ${isPublic or isAdmin or hasRole}"
+    >
+      <th:block th:if="${hasPermission}">
+        <a
+          class="item"
+          th:href="@{${menuItem.status.href}}"
+          th:target="${menuItem.spec.target?.value}"
+          th:title="${menuItem.status.displayName}"
+        >
+          <th:block th:if="${theme.config.navbar.enable_navbar_icon}">
+            <i
+              th:class="'m-icon '+${#annotations.getOrDefault(menuItem, 'icon','jiewen joe-icon-zuzhijiagou')}"
+            ></i>
+          </th:block>
+          [[${menuItem.status.displayName}]]
+        </a>
+      </th:block>
+    </th:block>
   </th:block>
 </html>

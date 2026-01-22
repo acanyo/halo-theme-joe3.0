@@ -3279,3 +3279,41 @@ spec:
           label: 控制台输出主题信息
           help: 是否在控制台输出主题相关信息
           value: false
+    - group: permission
+      label: 权限过滤
+      formSchema:
+        - $formkit: text
+          name: defaultPage
+          id: defaultPage
+          key: defaultPage
+          label: 未登录默认页面
+          help: 未登录用户访问网站时默认进入的首页，支持相对路径（如 /links）或完整 URL（如 https://example.com/login），留空则进入正常首页
+          value: ""
+        - $formkit: switch
+          name: publicUnauthPost
+          id: publicUnauthPost
+          key: publicUnauthPost
+          label: 公开未鉴权文章
+          help: 开启后，未配置权限的文章对所有人可见；关闭后，未配置权限的文章只对登录用户可见
+          value: false
+        - $formkit: switch
+          name: publicUnauthCategory
+          id: publicUnauthCategory
+          key: publicUnauthCategory
+          label: 公开未鉴权分类
+          help: 开启后，未配置权限的分类对所有人可见；关闭后，未配置权限的分类只对登录用户可见
+          value: true
+        - $formkit: switch
+          name: publicUnauthMenu
+          id: publicUnauthMenu
+          key: publicUnauthMenu
+          label: 公开未鉴权菜单
+          help: 开启后，未配置权限的菜单项对所有人可见；关闭后，未配置权限的菜单项只对登录用户可见
+          value: true
+        - $formkit: switch
+          name: publicUnauthPage
+          id: publicUnauthPage
+          key: publicUnauthPage
+          label: 公开未鉴权独立页面
+          help: 开启后，未配置权限的独立页面对所有人可见；关闭后，未配置权限的独立页面只对登录用户可见
+          value: true

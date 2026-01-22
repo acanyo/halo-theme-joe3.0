@@ -293,7 +293,8 @@
       auth=${#authentication},
       isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
       userRoles=${isLoggedIn ? auth.authorities : {}},
-      roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}}"
+      roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+      publicUnauthCategory=${theme.config.permission.publicUnauthCategory != null ? theme.config.permission.publicUnauthCategory : true}"
   >
     <section class="joe_aside__item tags-cloud" id="categories-cloud">
       <div class="joe_aside__item-title">
@@ -315,9 +316,11 @@
                 <th:block
                   th:with="
                     requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
-                    isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                    hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+                    requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+                    isPublic = ${!hasRequiredRole and (publicUnauthCategory or isLoggedIn)},
                     isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
-                    hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                    hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
                     hasPermission = ${isPublic or isAdmin or hasRole}"
                 >
                   <th:block th:if="${hasPermission}">
@@ -340,9 +343,11 @@
                 <th:block
                   th:with="
                     requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
-                    isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                    hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+                    requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+                    isPublic = ${!hasRequiredRole and (publicUnauthCategory or isLoggedIn)},
                     isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
-                    hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                    hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
                     hasPermission = ${isPublic or isAdmin or hasRole}"
                 >
                   <th:block th:if="${hasPermission}">

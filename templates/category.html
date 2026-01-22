@@ -11,10 +11,14 @@
       isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
       userRoles=${isLoggedIn ? auth.authorities : {}},
       roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+      publicUnauthCategory=${theme.config.permission.publicUnauthCategory != null ? theme.config.permission.publicUnauthCategory : true},
+      publicUnauthPost=${theme.config.permission.publicUnauthPost != null ? theme.config.permission.publicUnauthPost : true},
       requiredRole = ${category.metadata.annotations != null ? category.metadata.annotations['role'] : null},
-      isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+      hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+      requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+      isPublic = ${!hasRequiredRole and (publicUnauthCategory or isLoggedIn)},
       isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
-      hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+      hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
       hasPermission = ${isPublic or isAdmin or hasRole}"
   >
     <body>
@@ -39,9 +43,25 @@
                   <p style="font-size: 16px; color: #666; margin-bottom: 20px;">
                     您当前的角色无权访问此分类
                   </p>
-                  <p style="font-size: 14px; color: #999; margin-bottom: 30px;">
-                    需要角色：<code th:text="${requiredRole}" style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px;"></code>
-                  </p>
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 20px; text-align: left;">
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                      <strong>需要的角色：</strong>
+                      <code th:text="${requiredRole}" style="background: #fff; padding: 4px 8px; border-radius: 3px; border: 1px solid #ddd;"></code>
+                      或
+                      <code th:text="${'ROLE_' + requiredRole}" style="background: #fff; padding: 4px 8px; border-radius: 3px; border: 1px solid #ddd;"></code>
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 0;">
+                      <strong>您当前的角色：</strong>
+                      <th:block th:if="${#lists.isEmpty(roleList)}">
+                        <span style="color: #999;">（无角色）</span>
+                      </th:block>
+                      <th:block th:if="${!#lists.isEmpty(roleList)}">
+                        <th:block th:each="role, iterStat : ${roleList}">
+                          <code th:text="${role}" style="background: #fff; padding: 4px 8px; border-radius: 3px; border: 1px solid #ddd; margin-right: 5px;"></code>
+                        </th:block>
+                      </th:block>
+                    </p>
+                  </div>
                   <a th:href="@{/}" style="display: inline-block; padding: 12px 30px; background: var(--theme); color: #fff; border-radius: 4px; text-decoration: none; font-size: 16px;">
                     返回首页
                   </a>
@@ -82,9 +102,10 @@
                   <th:block
                     th:with="
                       postRequiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
-                      postIsPublic = ${postRequiredRole == null or postRequiredRole == '' or postRequiredRole == 'public'},
-                      postHasRole = ${isLoggedIn and postRequiredRole != null and #lists.contains(roleList, postRequiredRole)},
-                      postHasPermission = ${postIsPublic or isAdmin or postHasRole}"
+                      postHasRequiredRole = ${postRequiredRole != null and postRequiredRole != '' and postRequiredRole != 'public'},
+                      postIsPublic = ${!postHasRequiredRole and (publicUnauthPost or isLoggedIn)},
+                      postHasRole = ${isLoggedIn and postHasRequiredRole and #lists.contains(roleList, postRequiredRole)},
+                      postHasPermission = ${postIsPublic or isAdmin or hasPostBypass or postHasRole}"
                   >
                     <th:block th:if="${postHasPermission}">
                       <th:block th:replace="~{modules/macro/post_item :: post_item}" />

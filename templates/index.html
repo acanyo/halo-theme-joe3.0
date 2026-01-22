@@ -14,8 +14,15 @@
           isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
           username=${isLoggedIn ? auth.name : ''},
           userRoles=${isLoggedIn ? auth.authorities : {}},
-          roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}}"
+          roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+          publicUnauthPost=${theme.config.permission.publicUnauthPost != null ? theme.config.permission.publicUnauthPost : true}"
       >
+        <!-- 未登录用户默认页面跳转 -->
+        <th:block th:if="${!isLoggedIn and theme.config.permission.defaultPage != null and theme.config.permission.defaultPage != ''}">
+          <script th:inline="javascript">
+            window.location.href = /*[[${theme.config.permission.defaultPage}]]*/ '';
+          </script>
+        </th:block>
         <!--          navbar-->
         <th:block th:replace="~{modules/macro/navbar :: navbar}" />
         <!--          首页大图-->
@@ -86,9 +93,11 @@
                       <th:block
                         th:with="
                           requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
-                          isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
+                          hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+                          requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+                          isPublic = ${!hasRequiredRole and (publicUnauthPost or isLoggedIn)},
                           isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))},
-                          hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                          hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
                           hasPermission = ${isPublic or isAdmin or hasRole}"
                       >
                         <th:block th:if="${hasPermission}">

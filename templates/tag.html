@@ -11,6 +11,7 @@
       isLoggedIn=${auth != null and auth.authenticated and auth.principal != 'anonymousUser'},
       userRoles=${isLoggedIn ? auth.authorities : {}},
       roleList=${isLoggedIn ? #lists.toList(userRoles.![authority]) : {}},
+      publicUnauthPost=${theme.config.permission.publicUnauthPost != null ? theme.config.permission.publicUnauthPost : true},
       isAdmin = ${isLoggedIn and (#lists.contains(roleList, 'ROLE_super-role') or #lists.contains(roleList, 'ROLE_admin'))}"
   >
     <body>
@@ -40,8 +41,10 @@
                   <th:block
                     th:with="
                       requiredRole = ${post.metadata.annotations != null ? post.metadata.annotations['role'] : null},
-                      isPublic = ${requiredRole == null or requiredRole == '' or requiredRole == 'public'},
-                      hasRole = ${isLoggedIn and requiredRole != null and #lists.contains(roleList, requiredRole)},
+                      hasRequiredRole = ${requiredRole != null and requiredRole != '' and requiredRole != 'public'},
+                      requiredRoleWithPrefix = ${hasRequiredRole ? ('ROLE_' + requiredRole) : null},
+                      isPublic = ${!hasRequiredRole and (publicUnauthPost or isLoggedIn)},
+                      hasRole = ${isLoggedIn and hasRequiredRole and (#lists.contains(roleList, requiredRole) or #lists.contains(roleList, requiredRoleWithPrefix))},
                       hasPermission = ${isPublic or isAdmin or hasRole}"
                   >
                     <th:block th:if="${hasPermission}">
